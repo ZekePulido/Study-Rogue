@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Insertion</title>
+</head>
+<body>
+    <h1>Insert Term and Definition</h1>
+    <form id="insertForm" action="/insert_data" method="post">
+        <label for="type">Type:</label><br>
+        <select id="type" name="type">
+            <option value="None">None</option>
+            <option value="TrueFalse">True/False</option>
+            <option value="TermDefinition">Term/Definition</option>
+            <option value="Math">Math</option>
+        </select><br><br>
+        <div id="trueFalseFields" style="display: none;">
+            <label for="questionTF">Question:</label><br>
+            <input type="text" id="questionTF" name="questionTF"><br>
+            <label for="answerTF">Answer:</label><br>
+            <select id="answerTF" name="answerTF">
+                <option value="True">True</option>
+                <option value="False">False</option>
+            </select><br><br>
+            <label for="tagTF">Tag:</label><br>
+            <input type="text" id="tagTF" name="tagTF"><br><br>
+        </div>
+        <div id="termDefinitionFields" style="display: none;">
+            <label for="term">Term:</label><br>
+            <input type="text" id="term" name="term"><br>
+            <label for="definition">Definition:</label><br>
+            <textarea id="definition" name="definition"></textarea><br><br>
+            <label for="tagTD">Tag:</label><br>
+            <input type="text" id="tagTD" name="tagTD"><br><br>
+        </div>
+        <div id="mathFields" style="display: none;">
+            <label for="questionM">Question:</label><br>
+            <input type="text" id="questionM" name="questionM"><br>
+            <label for="answerM">Answer:</label><br>
+            <textarea id="answerM" name="answerM"></textarea><br><br>
+            <label for="tagM">Tag:</label><br>
+            <input type="text" id="tagM" name="tagM"><br><br>
+        </div>
+        <input type="submit" value="Submit">
+    </form>
+
+    <div id="popupContainer" style="display: none;">
+        <p>Card Creation successful</p>
+    </div>
+
+    <div class="cardview">
+        {% for card in cards %}
+        <div>
+            <p>Type: {{ card.type }}</p>
+            {% if card.type == 'TrueFalse' %}
+            <p>Question: {{ card.question }}</p>
+            <p>Answer: {{ card.answer }}</p>
+            {% elif card.type == 'TermDefinition' %}
+            <p>Term: {{ card.term }}</p>
+            <p>Definition: {{ card.definition }}</p>
+            {% elif card.type == 'Math' %}
+            <p>Question: {{ card.question }}</p>
+            <p>Answer: {{ card.answer }}</p>
+            {% endif %}
+            <p>Tag: {{ card.tag }}</p>
+            <button onclick="location.href='/edit_card/{{ card.id }}'">Edit</button>
+            <form action="/delete_card/{{ card.id }}" method="post">
+                <button type="submit">Delete</button>
+            </form>
+        </div>
+        {% else %}
+        <p>No cards available.</p>
+        {% endfor %}
+    </div>
+    
+
+    <script>
+        document.getElementById('type').addEventListener('change', function() {
+            document.getElementById('trueFalseFields').style.display = 'none';
+            document.getElementById('termDefinitionFields').style.display = 'none';
+            document.getElementById('mathFields').style.display = 'none';
+    
+            var type = this.value;
+            switch(type) {
+                case 'TrueFalse':
+                    document.getElementById('trueFalseFields').style.display = 'block';
+                    break;
+                case 'TermDefinition':
+                    document.getElementById('termDefinitionFields').style.display = 'block';
+                    break;
+                case 'Math':
+                    document.getElementById('mathFields').style.display = 'block';
+                    break;
+            }
+        });
+
+        document.getElementById('insertForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            document.getElementById('popupContainer').style.display = 'block';
+            setTimeout(() => {
+                this.submit();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
