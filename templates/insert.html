@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Insertion</title>
+    <title>Cards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <h1>Insert Term and Definition</h1>
@@ -49,38 +50,56 @@
         <p>Card Creation successful</p>
     </div>
 
+    <form action="/type-selected" method="get">
+        <label for="filterType">Choose a card type:</label>
+        <select id="filterType" name="type">
+            <option value="TrueFalse">True/False</option>
+            <option value="TermDefinition">Term/Definition</option>
+            <option value="Math">Math</option>
+        </select>
+        <input type="submit" value="Filter">
+    </form>
+
     <div class="cardview">
-        {% for card in cards %}
-        <div>
-            <p>Type: {{ card.type }}</p>
-            {% if card.type == 'TrueFalse' %}
-            <p>Question: {{ card.question }}</p>
-            <p>Answer: {{ card.answer }}</p>
-            {% elif card.type == 'TermDefinition' %}
-            <p>Term: {{ card.term }}</p>
-            <p>Definition: {{ card.definition }}</p>
-            {% elif card.type == 'Math' %}
-            <p>Question: {{ card.question }}</p>
-            <p>Answer: {{ card.answer }}</p>
-            {% endif %}
-            <p>Tag: {{ card.tag }}</p>
-            <button onclick="location.href='/edit_card/{{ card.id }}'">Edit</button>
-            <form action="/delete_card/{{ card.id }}" method="post">
-                <button type="submit">Delete</button>
-            </form>
-        </div>
+        {% if cards %}
+            {% for card in cards %}
+                <div class="card">
+                    <div class="card-content">
+                        <div class="info">
+                            <div class="details">
+                                {% if card.type == 'TrueFalse' %}
+                                    <p>Question: <span>{{ card.question }}</span></p>
+                                    <p>Answer: <span>{{ card.answer }}</span></p>
+                                {% elif card.type == 'TermDefinition' %}
+                                    <p>Term: <span>{{ card.term }}</span></p>
+                                    <p>Definition: <span>{{ card.definition }}</span></p>
+                                {% elif card.type == 'Math' %}
+                                    <p>Question: <span>{{ card.question }}</span></p>
+                                    <p>Answer: <span>{{ card.answer }}</span></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="location.href='/edit_card/{{ card.id }}'">Edit</button>
+                        <form action="/delete_card/{{ card.id }}" method="post" style="display: inline;">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
         {% else %}
-        <p>No cards available.</p>
-        {% endfor %}
+            <p>No cards available.</p>
+        {% endif %}
     </div>
-    
 
     <script>
         document.getElementById('type').addEventListener('change', function() {
-            document.getElementById('trueFalseFields').style.display = 'none';
-            document.getElementById('termDefinitionFields').style.display = 'none';
-            document.getElementById('mathFields').style.display = 'none';
-    
+            var allFields = document.querySelectorAll('#trueFalseFields, #termDefinitionFields, #mathFields');
+            allFields.forEach(function(field) {
+                field.style.display = 'none';
+            });
+
             var type = this.value;
             switch(type) {
                 case 'TrueFalse':

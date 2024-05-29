@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Card</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Edit Card</h1>
+    <form id="editForm" action="/edit_card/{{ card.id }}" method="post">
+        <input type="hidden" name="type" value="{{ card.type }}">
+        
+        <label for="type">Type:</label><br>
+        <select id="type" name="type" disabled>
+            <option value="TrueFalse" {% if card.type == 'TrueFalse' %}selected{% endif %}>True/False</option>
+            <option value="TermDefinition" {% if card.type == 'TermDefinition' %}selected{% endif %}>Term/Definition</option>
+            <option value="Math" {% if card.type == 'Math' %}selected{% endif %}>Math</option>
+        </select><br><br>
+
+        {% if card.type == 'TrueFalse' %}
+        <div id="trueFalseFields">
+            <label for="questionTF">Question:</label><br>
+            <input type="text" id="questionTF" name="questionTF" value="{{ card.question }}"><br>
+            <label for="answerTF">Answer:</label><br>
+            <select id="answerTF" name="answerTF">
+                <option value="True" {% if card.answer == 'True' %}selected{% endif %}>True</option>
+                <option value="False" {% if card.answer == 'False' %}selected{% endif %}>False</option>
+            </select><br><br>
+            <label for="tagTF">Tag:</label><br>
+            <input type="text" id="tagTF" name="tagTF" value="{{ card.tag }}"><br><br>
+        </div>
+        {% elif card.type == 'TermDefinition' %}
+        <div id="termDefinitionFields">
+            <label for="term">Term:</label><br>
+            <input type="text" id="term" name="term" value="{{ card.term }}"><br>
+            <label for="definition">Definition:</label><br>
+            <textarea id="definition" name="definition">{{ card.definition }}</textarea><br><br>
+            <label for="tagTD">Tag:</label><br>
+            <input type="text" id="tagTD" name="tagTD" value="{{ card.tag }}"><br><br>
+        </div>
+        {% elif card.type == 'Math' %}
+        <div id="mathFields">
+            <label for="questionM">Question:</label><br>
+            <input type="text" id="questionM" name="questionM" value="{{ card.question }}"><br>
+            <label for="answerM">Answer:</label><br>
+            <textarea id="answerM" name="answerM">{{ card.answer }}</textarea><br><br>
+            <label for="tagM">Tag:</label><br>
+            <input type="text" id="tagM" name="tagM" value="{{ card.tag }}"><br><br>
+        </div>
+        {% endif %}
+        <input type="submit" value="Update">
+    </form>
+</body>
+</html>
