@@ -1,0 +1,39 @@
+.cardview {
+    margin: 20px;
+}
+.card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+.card-content {
+    flex-grow: 1;
+}
+.info {
+    display: flex;
+    flex-direction: column;
+}
+.details {
+    display: flex;
+    justify-content: space-between;
+}
+.details p {
+    margin: 5px 0;
+    display: flex;
+}
+.details p span {
+    margin-left: 10px;
+}
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.card-actions form {
+    margin: 0;
+}

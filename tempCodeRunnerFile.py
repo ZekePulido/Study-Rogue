@@ -21,14 +21,16 @@ def close_connection(exception):
 
 @app.route('/type-selected', methods=['GET'])
 def tag_selected():
-    tag_type = request.args.get('type', default='TrueFalse', type=str)
+    tag_type = request.args.get('type', default='TrueFalse', type=str)  # Default to 'TrueFalse' if not specified
     db = get_db()
     cursor = db.cursor()
-    query = "SELECT id, type, question, answer, term, definition, tag FROM Terms WHERE type = ?;"
-    cursor.execute(query, (tag_type,))
-    cards = cursor.fetchall()
-    return render_template('insert.html', cards=cards)
 
+    # Correct SQL query syntax
+    query = "SELECT id, question, answer, term, definition, tag FROM Terms WHERE type = ?;"
+    cursor.execute(query, (tag_type,))  # Parameterized query for safety and flexibility
+    cards = cursor.fetchall()
+
+    return render_template('insert.html', cards=cards)  # Make sure to create and specify the correct template
 
 
 @app.route('/')
@@ -38,7 +40,6 @@ def index():
     cursor.execute("SELECT id, type, question, answer, term, definition, tag FROM Terms;")
     cards = cursor.fetchall()
     return render_template('insert.html', cards=cards)
-
 
 @app.route('/insert_data', methods=['POST'])
 def insert_data():
@@ -74,39 +75,6 @@ def insert_data():
         return "Database error: " + str(e), 500
     finally:
         cursor.close()
-
-@app.route('/edit_card/<int:id>', methods=['GET', 'POST'])
-def edit_card(id):
-    db = get_db()
-    cursor = db.cursor()
-
-    if request.method == 'POST':
-        print(request.form)  # Debugging line
-        entry_type = request.form['type']
-
-        if entry_type == 'TrueFalse':
-            question = request.form.get('questionTF')
-            answer = request.form.get('answerTF')
-            tag = request.form.get('tagTF')
-            cursor.execute("UPDATE Terms SET question = ?, answer = ?, tag = ? WHERE id = ?;", (question, answer, tag, id))
-        elif entry_type == 'TermDefinition':
-            term = request.form.get('term')
-            definition = request.form.get('definition')
-            tag = request.form.get('tagTD')
-            cursor.execute("UPDATE Terms SET term = ?, definition = ?, tag = ? WHERE id = ?;", (term, definition, tag, id))
-        elif entry_type == 'Math':
-            question = request.form.get('questionM')
-            answer = request.form.get('answerM')
-            tag = request.form.get('tagM')
-            cursor.execute("UPDATE Terms SET question = ?, answer = ?, tag = ? WHERE id = ?;", (question, answer, tag, id))
-
-        db.commit()
-        return redirect(url_for('index'))
-
-    cursor.execute("SELECT id, type, question, answer, term, definition, tag FROM Terms WHERE id = ?;", (id,))
-    card = cursor.fetchone()
-    return render_template('edit.html', card=card)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
