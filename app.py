@@ -108,5 +108,29 @@ def edit_card(id):
     return render_template('edit.html', card=card)
 
 
+@app.route('/confirm_delete/<int:id>', methods=['GET'])
+def confirm_delete(id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM Terms WHERE id = ?", (id,))
+    card = cursor.fetchone()
+    db.close()
+    return render_template('delete.html', card=card)
+
+@app.route('/delete_card/<int:id>', methods=['POST'])
+def delete_card(id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM Terms WHERE id = ?", (id,))
+    db.commit()
+    db.close()
+    return redirect(url_for('index'))
+
+
+@app.route('/cancel')
+def cancel():
+    return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
     app.run(debug=True)
