@@ -32,10 +32,10 @@
         </div>
         {% elif card.type == 'TermDefinition' %}
         <div id="termDefinitionFields">
-            <label for="term">Term:</label><br>
-            <input type="text" id="term" name="term" value="{{ card.term }}"><br>
-            <label for="definition">Definition:</label><br>
-            <textarea id="definition" name="definition">{{ card.definition }}</textarea><br><br>
+            <label for="questionTD">Question:</label><br>
+            <input type="text" id="questionTD" name="questionTD" value="{{ card.question }}"><br>
+            <label for="answerTD">Answer:</label><br>
+            <textarea id="answerTD" name="answerTD">{{ card.answer }}</textarea><br><br>
             <label for="tagTD">Tag:</label><br>
             <input type="text" id="tagTD" name="tagTD" value="{{ card.tag }}"><br><br>
         </div>
