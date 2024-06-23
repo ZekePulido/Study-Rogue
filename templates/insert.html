@@ -28,10 +28,10 @@
             <input type="text" id="tagTF" name="tagTF"><br><br>
         </div>
         <div id="termDefinitionFields" style="display: none;">
-            <label for="questionTD">Question::</label><br>
-            <input type="text" id="questionTD" name="questionTD"><br>
-            <label for="answerTD">Answer:</label><br>
-            <textarea id="answerTD" name="answerTD"></textarea><br><br>
+            <label for="term">Term:</label><br>
+            <input type="text" id="term" name="term"><br>
+            <label for="definition">Definition:</label><br>
+            <textarea id="definition" name="definition"></textarea><br><br>
             <label for="tagTD">Tag:</label><br>
             <input type="text" id="tagTD" name="tagTD"><br><br>
         </div>
@@ -67,14 +67,22 @@
                     <div class="card-content">
                         <div class="info">
                             <div class="details">
-                                <p>Question: <span>{{ card.question }}</span></p>
-                                <p>Answer: <span>{{ card.answer }}</span></p>
+                                {% if card.type == 'TrueFalse' %}
+                                    <p>Question: <span>{{ card.question }}</span></p>
+                                    <p>Answer: <span>{{ card.answer }}</span></p>
+                                {% elif card.type == 'TermDefinition' %}
+                                    <p>Term: <span>{{ card.term }}</span></p>
+                                    <p>Definition: <span>{{ card.definition }}</span></p>
+                                {% elif card.type == 'Math' %}
+                                    <p>Question: <span>{{ card.question }}</span></p>
+                                    <p>Answer: <span>{{ card.answer }}</span></p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     <div class="card-actions">
                         <button onclick="location.href='/edit_card/{{ card.id }}'">Edit</button>
-                        <form action="{{ url_for('confirm_delete', id=card.id) }}" method="get" style="display: inline;">
+                        <form action="/delete_card/{{ card.id }}" method="post" style="display: inline;">
                             <button type="submit">Delete</button>
                         </form>
                     </div>

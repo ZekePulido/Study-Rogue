@@ -3,5 +3,7 @@ CREATE TABLE IF NOT EXISTS Terms (
     type TEXT NOT NULL,
     question TEXT,
     answer TEXT,
+    term TEXT,
+    definition TEXT,
     tag TEXT NOT NULL
 );
