@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Card</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/delete.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Delete Card</h1>
+        <div class="card-info">
+            {% if card.type == 'TrueFalse' %}
+                <p>Question: <strong>{{ card.question }}</strong></p>
+                <p>Answer: <strong>{{ card.answer }}</strong></p>
+            {% elif card.type == 'TermDefinition' %}
+                <p>Term: <strong>{{ card.term }}</strong></p>
+                <p>Definition: <strong>{{ card.definition }}</strong></p>
+            {% elif card.type == 'Math' %}
+                <p>Question: <strong>{{ card.question }}</strong></p>
+                <p>Answer: <strong>{{ card.answer }}</strong></p>
+            {% endif %}
+        </div>
+        <div class="buttons">
+            <form action="{{ url_for('delete_card', id=card['id']) }}" method="post" onsubmit="confirmDelete(event)">
+                <button type="submit" class="button delete">Delete</button>
+            </form>
+            <form action="{{ url_for('cancel') }}" method="get">
+                <button type="submit" class="button cancel">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function confirmDelete(event) {
+            event.preventDefault();
+            const userConfirmed = confirm("Are you sure you want to delete this item?");
+            if (userConfirmed) {
+                event.target.submit();
+            }
+        }
+    </script>
+</body>
+</html>
