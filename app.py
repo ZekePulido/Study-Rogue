@@ -137,6 +137,10 @@ def delete_card(id):
     db.close()
     return redirect(url_for('index'))
 
+@app.route('/gameView/')
+def gameView():
+    return render_template('gameView.html')
+
 
 @app.route('/cancel')
 def cancel():

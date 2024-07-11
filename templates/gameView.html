@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Rogue</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gameView.css') }}">
+</head>
+<body>
+    <div class="container title-container">
+        <img src="title-image.jpg" alt="Study Rogue">
+    </div>
+    <div class="container bottom-container">
+        <div class="left">
+            <div class="note-card">
+                <h3>Question</h3>
+                <!-- Display question here -->
+                <p>What is the capital of France?</p>
+            </div>
+            <div class="note-card">
+                <h3>Your Answer</h3>
+                <!-- Input for answer here -->
+                <input type="text" placeholder="Type your answer here" style="width: 80%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+        </div>
+        <div class="right">
+            <div class="character-info">
+                <div class = "character">
+                    <p>Character HP: 100</p>
+                </div>
+                
+                <div class = "monster">
+                    <p>Monster HP: 80</p>
+                </div>
+            </div>
+            <div class="buttons">
+                <button class = "attack">Attack</button>
+                <button class = "defend">Defend</button>
+                <button class = "heal">Heal</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
