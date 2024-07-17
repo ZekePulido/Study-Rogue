@@ -6,6 +6,17 @@
     <title>Study Rogue</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gameView.css') }}">
 </head>
+<style>
+    .results {
+    max-height: 200px; 
+    height: 100px; 
+    overflow-y: auto;
+    background-color: rgba(233, 236, 239, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; 
+    }
+</style>
 <body>
     <div class="container title-container">
         <img src="{{ url_for('static', filename='title-image.jpg') }}" alt="Study Rogue">
@@ -44,10 +55,10 @@
             </div>
 
             <div class="results">
-                {% if result %}
-                    <p>{{ result|safe }}</p>
-                {% endif %}
-            </div>
+                {% for entry in combat_log %}
+                    <p>{{ entry }}</p>
+                {% endfor %}
+            </div>           
         </div>
     </div>
 </body>

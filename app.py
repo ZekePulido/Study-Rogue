@@ -145,12 +145,16 @@ def gameView():
     result = request.args.get('result', '')
 
     if 'goblin' not in session:
-        goblin = entity.mob("Goblin", 50, 10, 0.55)
-        user = entity.mob("User", 100, 15, 0.75)
+        goblin = entity.Mob("Goblin", 50, 10, 0.55)
         session['goblin'] = goblin.__dict__
+
+    if 'user' not in session:
+        user = entity.Mob("User", 100, 15, 0.75)
         session['user'] = user.__dict__
 
-    return render_template('gameView.html', goblin=session['goblin'], user=session['user'], result=result)
+    combat_log = session.get('combat_log', [])
+
+    return render_template('gameView.html', goblin=session['goblin'], user=session['user'], result=result, combat_log=combat_log)
 
 @app.route('/cancel')
 def cancel():
@@ -164,19 +168,24 @@ def attack():
     user_data = session['user']
     goblin_data = session['goblin']
 
-    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
-    goblin = entity.mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+    user = entity.Mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    goblin = entity.Mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+
+    combat_log = session.get('combat_log', [])
 
     damage = user.deal_damage()
     result = goblin.take_damage(damage)
+    combat_log.insert(0, result)
     session['goblin'] = goblin.__dict__
-    session['user'] = user.__dict__
 
     if goblin.hp > 0:
         damage = goblin.deal_damage()
-        result += f"<br>{goblin.name} attacks back! "
-        result += user.take_damage(damage)
+        result = f"{goblin.name} attacks back! {goblin.deal_damage()}"
+        combat_log.insert(0, result)
+        user.take_damage(damage)
         session['user'] = user.__dict__
+
+    session['combat_log'] = combat_log
 
     return redirect(url_for('gameView', result=result))
 
@@ -188,13 +197,18 @@ def defend():
     user_data = session['user']
     goblin_data = session['goblin']
 
-    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
-    goblin = entity.mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+    user = entity.Mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    goblin = entity.Mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+
+    combat_log = session.get('combat_log', [])
 
     # Goblin attacks user
     damage = goblin.deal_damage()
     result = user.defend_damage(damage)
+    combat_log.insert(0, result)
     session['user'] = user.__dict__
+
+    session['combat_log'] = combat_log
 
     return redirect(url_for('gameView', result=result))
 

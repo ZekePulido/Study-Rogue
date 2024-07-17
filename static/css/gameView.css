@@ -18,12 +18,14 @@ body {
     border-radius: 10px;
 }
 
-
 .bottom-container {
     background-image: url("/static/assets/woodBackground.jfif");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
 }
 
 .title-container {
@@ -35,12 +37,6 @@ body {
     max-width: 100%;
     height: auto;
     border-radius: 10px;
-}
-
-.bottom-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
 }
 
 .left, .right {
@@ -75,10 +71,6 @@ body {
     .buttons {
         flex-direction: row;
         justify-content: space-around;
-    }
-
-    .results {
-        flex-direction: row;
     }
 }
 
@@ -136,10 +128,4 @@ body {
     background-color: lightskyblue;
 }
 
-.heal {
-    background-color: green;
-}
 
-.heal:hover {
-    background-color: #45a049;
-}
