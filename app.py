@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request, g, redirect, url_for
+from flask import Flask, render_template, request, g, redirect, url_for, session
 import sqlite3
 import random
+import entity
+import secrets
 
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(16)
 
 DATABASE = 'StudyRogue.db'
 
@@ -139,12 +142,62 @@ def delete_card(id):
 
 @app.route('/gameView/')
 def gameView():
-    return render_template('gameView.html')
+    result = request.args.get('result', '')
 
+    if 'goblin' not in session:
+        goblin = entity.mob("Goblin", 50, 10, 0.55)
+        user = entity.mob("User", 100, 15, 0.75)
+        session['goblin'] = goblin.__dict__
+        session['user'] = user.__dict__
+
+    return render_template('gameView.html', goblin=session['goblin'], user=session['user'], result=result)
 
 @app.route('/cancel')
 def cancel():
     return redirect(url_for('index'))
+
+@app.route('/attack')
+def attack():
+    if 'user' not in session or 'goblin' not in session:
+        return redirect(url_for('gameView'))
+
+    user_data = session['user']
+    goblin_data = session['goblin']
+
+    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    goblin = entity.mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+
+    damage = user.deal_damage()
+    result = goblin.take_damage(damage)
+    session['goblin'] = goblin.__dict__
+    session['user'] = user.__dict__
+
+    if goblin.hp > 0:
+        damage = goblin.deal_damage()
+        result += f"<br>{goblin.name} attacks back! "
+        result += user.take_damage(damage)
+        session['user'] = user.__dict__
+
+    return redirect(url_for('gameView', result=result))
+
+@app.route('/defend')
+def defend():
+    if 'user' not in session or 'goblin' not in session:
+        return redirect(url_for('gameView'))
+
+    user_data = session['user']
+    goblin_data = session['goblin']
+
+    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    goblin = entity.mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+
+    # Goblin attacks user
+    damage = goblin.deal_damage()
+    result = user.defend_damage(damage)
+    session['user'] = user.__dict__
+
+    return redirect(url_for('gameView', result=result))
+
 
 if __name__ == '__main__':
     with app.app_context():

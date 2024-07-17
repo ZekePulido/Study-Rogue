@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container title-container">
-        <img src="title-image.jpg" alt="Study Rogue">
+        <img src="{{ url_for('static', filename='title-image.jpg') }}" alt="Study Rogue">
     </div>
     <div class="container bottom-container">
         <div class="left">
@@ -25,18 +25,28 @@
         </div>
         <div class="right">
             <div class="character-info">
-                <div class = "character">
-                    <p>Character HP: 100</p>
+                <div class="character">
+                    <p>{{ user.name }} HP: {{ user.hp }}</p>
+                    <img src="{{ url_for('static', filename='assets/character.png') }}" alt="character" class="character-image">
                 </div>
-                
-                <div class = "monster">
-                    <p>Monster HP: 80</p>
+                <div class="monster">
+                    <p>{{ goblin.name }} HP: {{ goblin.hp }}</p>
+                    <img src="{{ url_for('static', filename='assets/goblin.png') }}" alt="goblin" class="character-image">
                 </div>
             </div>
             <div class="buttons">
-                <button class = "attack">Attack</button>
-                <button class = "defend">Defend</button>
-                <button class = "heal">Heal</button>
+                <form action="{{ url_for('attack') }}" method="get">
+                    <button type="submit" class="attack">Attack</button>
+                </form>
+                <form action="{{ url_for('defend') }}" method="get">
+                    <button type="submit" class="defend">Defend</button>
+                </form>
+            </div>
+
+            <div class="results">
+                {% if result %}
+                    <p>{{ result|safe }}</p>
+                {% endif %}
             </div>
         </div>
     </div>
