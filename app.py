@@ -142,75 +142,126 @@ def delete_card(id):
 
 @app.route('/gameView/')
 def gameView():
+    # Define the single monster
+    monster = {"name": "Goblin", "hp": 50, "damage": 10, "hit_rate": 0.55}
+
+    if 'monster' not in session:
+        # Initialize session with monster and user if not already set
+        session['monster'] = monster
+        session['user'] = {"name": "User", "hp": 100, "damage": 15, "hit_rate": 0.75}
+
     result = request.args.get('result', '')
-
-    if 'goblin' not in session:
-        goblin = entity.Mob("Goblin", 50, 10, 0.55)
-        session['goblin'] = goblin.__dict__
-
-    if 'user' not in session:
-        user = entity.Mob("User", 100, 15, 0.75)
-        session['user'] = user.__dict__
-
     combat_log = session.get('combat_log', [])
 
-    return render_template('gameView.html', goblin=session['goblin'], user=session['user'], result=result, combat_log=combat_log)
-
-@app.route('/cancel')
-def cancel():
-    return redirect(url_for('index'))
+    return render_template('gameView.html', monster=session['monster'], user=session['user'], result=result, combat_log=combat_log)
 
 @app.route('/attack')
 def attack():
-    if 'user' not in session or 'goblin' not in session:
+    if 'user' not in session or 'monster' not in session:
         return redirect(url_for('gameView'))
 
+    # Retrieve user and monster data from session
     user_data = session['user']
-    goblin_data = session['goblin']
+    monster_data = session['monster']
 
-    user = entity.Mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
-    goblin = entity.Mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+    # Initialize entities based on session data
+    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    monster = entity.mob(monster_data['name'], monster_data['hp'], monster_data['damage'], monster_data['hit_rate'])
 
-    combat_log = session.get('combat_log', [])
+    # User attacks monster
+    damage_to_monster = user.deal_damage()
+    result = monster.take_damage(damage_to_monster)
 
-    damage = user.deal_damage()
-    result = goblin.take_damage(damage)
-    combat_log.insert(0, result)
-    session['goblin'] = goblin.__dict__
+    # Update monster data in session
+    session['monster'] = monster.__dict__
 
-    if goblin.hp > 0:
-        damage = goblin.deal_damage()
-        result = f"{goblin.name} attacks back! {goblin.deal_damage()}"
-        combat_log.insert(0, result)
-        user.take_damage(damage)
+    # Check if monster is defeated
+    if monster.hp <= 0:
+        result += f"<br>{monster.name} is defeated!"
+        session.pop('monster')  # Remove monster from session
+        result += "<br>Congratulations! You have defeated the monster."
+        session.clear()  # Clear session data
+        return redirect(url_for('game_end'))
+
+    else:
+        # Monster attacks back if not defeated
+        damage_to_user = monster.deal_damage()
+        result += f"<br>{monster.name} attacks back! "
+        result += user.take_damage(damage_to_user)
         session['user'] = user.__dict__
 
+        # Check if user is defeated
+        if user.hp <= 0:
+            result += "<br>You have been defeated!"
+            session.clear()  # Clear session data
+            return redirect(url_for('game_end'))
+
+    # Store combat result in session
+    combat_log = session.get('combat_log', [])
+    combat_log.append(result)
     session['combat_log'] = combat_log
 
     return redirect(url_for('gameView', result=result))
 
 @app.route('/defend')
 def defend():
-    if 'user' not in session or 'goblin' not in session:
+    if 'user' not in session or 'monster' not in session:
         return redirect(url_for('gameView'))
 
+    # Retrieve user and monster data from session
     user_data = session['user']
-    goblin_data = session['goblin']
+    monster_data = session['monster']
 
-    user = entity.Mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
-    goblin = entity.Mob(goblin_data['name'], goblin_data['hp'], goblin_data['damage'], goblin_data['hit_rate'])
+    # Initialize entities based on session data
+    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    monster = entity.mob(monster_data['name'], monster_data['hp'], monster_data['damage'], monster_data['hit_rate'])
 
-    combat_log = session.get('combat_log', [])
-
-    # Goblin attacks user
-    damage = goblin.deal_damage()
-    result = user.defend_damage(damage)
-    combat_log.insert(0, result)
+    # User defends against monster attack
+    damage_to_user = monster.deal_damage()
+    result = user.defend_damage(damage_to_user)
     session['user'] = user.__dict__
 
+    # Check if user is defeated
+    if user.hp <= 0:
+        result += "<br>You have been defeated!"
+        session.clear()  # Clear session data
+        return redirect(url_for('game_end'))
+
+    # Monster takes a turn if still alive
+    if monster.hp > 0:
+        damage_to_user = monster.deal_damage()
+        result += f"<br>{monster.name} attacks back! "
+        result += user.take_damage(damage_to_user)
+        session['user'] = user.__dict__
+
+        # Check if user is defeated
+        if user.hp <= 0:
+            result += "<br>You have been defeated!"
+            session.clear()  # Clear session data
+            return redirect(url_for('game_end'))
+
+    # Store combat result in session
+    combat_log = session.get('combat_log', [])
+    combat_log.append(result)
     session['combat_log'] = combat_log
 
     return redirect(url_for('gameView', result=result))
+
+
+@app.route('/game_end')
+def game_end():
+    return render_template('gameEnd.html')
+
+
+@app.route('/start_game', methods=['POST'])
+def start_game():
+    # Initialize game with a new monster
+    monster = {"name": "Goblin", "hp": 50, "damage": 10, "hit_rate": 0.55}
+
+    session['monster'] = monster
+    session['user'] = {"name": "User", "hp": 100, "damage": 15, "hit_rate": 0.75}
+    return redirect(url_for('gameView'))
+
 
 
 if __name__ == '__main__':

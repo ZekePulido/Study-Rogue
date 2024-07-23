@@ -8,13 +8,13 @@
 </head>
 <style>
     .results {
-    max-height: 200px; 
-    height: 100px; 
-    overflow-y: auto;
-    background-color: rgba(233, 236, 239, 0.8);
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box; 
+        max-height: 200px; 
+        height: 100px; 
+        overflow-y: auto;
+        background-color: rgba(233, 236, 239, 0.8);
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box; 
     }
 </style>
 <body>
@@ -37,29 +37,47 @@
         <div class="right">
             <div class="character-info">
                 <div class="character">
-                    <p>{{ user.name }} HP: {{ user.hp }}</p>
+                    <p id="user-hp">{{ user.name }} HP: <span>{{ user.hp }}</span></p>
                     <img src="{{ url_for('static', filename='assets/character.png') }}" alt="character" class="character-image">
                 </div>
                 <div class="monster">
-                    <p>{{ goblin.name }} HP: {{ goblin.hp }}</p>
-                    <img src="{{ url_for('static', filename='assets/goblin.png') }}" alt="goblin" class="character-image">
+                    <p id="monster-hp">{{ monster.name }} HP: <span>{{ monster.hp }}</span></p>
+                    <img src="{{ url_for('static', filename='assets/goblin.png') }}" alt="monster" class="character-image">
                 </div>
             </div>
             <div class="buttons">
                 <form action="{{ url_for('attack') }}" method="get">
-                    <button type="submit" class="attack">Attack</button>
+                    <button type="submit" class="attack" id="attack-button">Attack</button>
                 </form>
                 <form action="{{ url_for('defend') }}" method="get">
-                    <button type="submit" class="defend">Defend</button>
+                    <button type="submit" class="defend" id="defend-button">Defend</button>
                 </form>
             </div>
 
             <div class="results">
                 {% for entry in combat_log %}
-                    <p>{{ entry }}</p>
+                    <p>{{ entry|safe }}</p>
                 {% endfor %}
             </div>           
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Get the HP values
+            const userHp = parseInt(document.getElementById('user-hp').querySelector('span').textContent);
+            const monsterHp = parseInt(document.getElementById('monster-hp').querySelector('span').textContent);
+
+            // Get the buttons
+            const attackButton = document.getElementById('attack-button');
+            const defendButton = document.getElementById('defend-button');
+
+            // Check if either HP is 0 or below and disable buttons
+            if (userHp <= 0 || monsterHp <= 0) {
+                attackButton.disabled = true;
+                defendButton.disabled = true;
+            }
+        });
+    </script>
 </body>
 </html>
