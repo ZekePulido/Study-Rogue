@@ -1,17 +1,18 @@
-from flask import Flask, render_template, request, g, redirect, url_for
+from flask import Flask, render_template, request, g, redirect, url_for, session
 import sqlite3
 import random
+import entity
+import secrets
 
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(16)
 
 DATABASE = 'StudyRogue.db'
 
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-    return db
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def create_table():
     db = get_db()
@@ -33,120 +34,247 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-@app.route('/type-selected', methods=['GET'])
-def tag_selected():
-    tag_type = request.args.get('type', default='TrueFalse', type=str)
-    db = get_db()
-    cursor = db.cursor()
-    query = "SELECT id, type, question, answer, tag FROM Terms WHERE type = ?;"
-    cursor.execute(query, (tag_type,))
-    cards = cursor.fetchall()
-    return render_template('insert.html', cards=cards)
+@app.route('/start_game', methods= ['POST'])
+def start_game():
+    session.clear()
 
-@app.route('/')
-def index():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT id, type, question, answer, tag FROM Terms;")
-    cards = cursor.fetchall()
-    return render_template('insert.html', cards=cards)
+    # Initialize session variables
+    session['monsters'] = [
+        {"name": "Goblin", "hp": 50, "damage": 10, "hit_rate": 0.6},
+        {"name": "Orc", "hp": 80, "damage": 15, "hit_rate": 0.7},
+        {"name": "Dragon", "hp": 150, "damage": 25, "hit_rate": 0.8}
+    ]
+    session['current_monster'] = 0
+    session['user'] = {"name": "User", "hp": 100, "damage": 15, "hit_rate": 0.75}
 
-@app.route('/insert_data', methods=['POST'])
-def insert_data():
-    try:
-        db = get_db()
-        cursor = db.cursor()
+    # Initialize game mechanics related variables
+    session['correct_answers'] = 0
+    session['remaining_actions'] = 0
+    session['questions_answered'] = 0
+    session['combat_log'] = []
 
-        entry_type = request.form['type']
-        
-        if entry_type == 'TrueFalse':
-            question = request.form.get('questionTF')
-            answer = request.form.get('answerTF')
-            tag = request.form.get('tagTF')
-            if question and answer and tag:
-                cursor.execute("INSERT INTO Terms (type, question, answer, tag) VALUES (?, ?, ?, ?);", (entry_type, question, answer, tag))
-        elif entry_type == 'TermDefinition':
-            question = request.form.get('questionTD')
-            answer = request.form.get('answerTD')
-            tag = request.form.get('tagTD')
-            if question and answer and tag:
-                cursor.execute("INSERT INTO Terms (type, question, answer, tag) VALUES (?, ?, ?, ?);", (entry_type, question, answer, tag))
-        elif entry_type == 'Math':
-            question = request.form.get('questionM')
-            answer = request.form.get('answerM')
-            tag = request.form.get('tagM')
-            if question and answer and tag:
-                cursor.execute("INSERT INTO Terms (type, question, answer, tag) VALUES (?, ?, ?, ?);", (entry_type, question, answer, tag))
+    # Initialize terms for questions
+    session['terms'] = get_terms('s')
+    session['current_term_index'] = 0
 
-        db.commit()
-        return redirect(url_for('index'))
-    except sqlite3.Error as e:
-        db.rollback()
-        return "Database error: " + str(e), 500
-    finally:
-        cursor.close()
+    return redirect(url_for('gameView'))
 
-@app.route('/edit_card/<int:id>', methods=['GET', 'POST'])
-def edit_card(id):
-    db = get_db()
-    cursor = db.cursor()
+
+@app.route('/gameView/', methods=['GET', 'POST'])
+def gameView():
+    if 'monsters' not in session or 'current_monster' not in session:
+        return redirect(url_for('start_game'))
+
+    monsters = session['monsters']
+    current_monster_index = session['current_monster']
+
+    if current_monster_index >= len(monsters):
+        return redirect(url_for('game_end'))
+
+    monster = monsters[current_monster_index]
+
+    monster_sprites = {
+        "Goblin": "goblin.png",
+        "Dragon": "dragon.png",
+        "Orc": "orc.png",
+        # Add more mappings as needed
+    }
+
+     # Determine the sprite filename based on monster name
+    monster_name = monster.get('name', 'Unknown')  # Access name from dictionary
+    sprite_filename = monster_sprites.get(monster_name, "default_monster.png")
+
+    if 'user' not in session:
+        session['user'] = {"name": "User", "hp": 100, "damage": 15, "hit_rate": 0.75}
+        session['correct_answers'] = 0
+        session['remaining_actions'] = 0
+        session['questions_answered'] = 0
+
+    if 'terms' not in session or 'current_term_index' not in session:
+        session['terms'] = get_terms('s')  # Load initial terms
+        session['current_term_index'] = 0
+
+    terms = session['terms']
+    current_term_index = session['current_term_index']
+
+
+    # Ensure current_term_index is valid
+    if current_term_index >= len(terms):
+        session['terms'] = get_terms('s')  # Reload terms if index is out of range
+        session['current_term_index'] = 0
+        current_term_index = 0
+    else:
+        session['current_term_index'] = current_term_index
+
+    # Fetch the current term for display
+    current_term = terms[current_term_index] if terms else None
+
+    combat_log = session.get('combat_log', [])
+
+    feedback_message = ""
+    feedback_class = ""
 
     if request.method == 'POST':
-        print(request.form)  # Debugging line
-        entry_type = request.form['type']
+        user_answer = request.form.get('user_answer', '').strip().lower()
+        correct_answer = current_term['answer'].strip().lower()
 
-        if entry_type == 'TrueFalse':
-            question = request.form.get('questionTF')
-            answer = request.form.get('answerTF')
-            tag = request.form.get('tagTF')
-            cursor.execute("UPDATE Terms SET question = ?, answer = ?, tag = ? WHERE id = ?;", (question, answer, tag, id))
-        elif entry_type == 'TermDefinition':
-            question = request.form.get('questionTD')
-            answer = request.form.get('answerTD')
-            tag = request.form.get('tagTD')
-            cursor.execute("UPDATE Terms SET question = ?, answer = ?, tag = ? WHERE id = ?;", (question, answer, tag, id))
-        elif entry_type == 'Math':
-            question = request.form.get('questionM')
-            answer = request.form.get('answerM')
-            tag = request.form.get('tagM')
-            cursor.execute("UPDATE Terms SET question = ?, answer = ?, tag = ? WHERE id = ?;", (question, answer, tag, id))
+        if user_answer == correct_answer:
+            feedback_message = "Correct!"
+            feedback_class = "correct"
+            session['correct_answers'] += 1
+        else:
+            feedback_message = f"Incorrect, the correct answer is {correct_answer}"
+            feedback_class = "incorrect"
 
-        db.commit()
-        return redirect(url_for('index'))
+        session['questions_answered'] += 1
 
-    cursor.execute("SELECT id, type, question, answer, tag FROM Terms WHERE id = ?;", (id,))
-    card = cursor.fetchone()
-    return render_template('edit.html', card=card)
+        # Move to the next question
+        current_term_index += 1
+
+        if current_term_index >= len(terms):
+            # Reload terms and reset index if out of range
+            session['terms'] = get_terms('s')
+            current_term_index = 0
+
+        session['current_term_index'] = current_term_index
+
+        # Check if 5 questions have been answered
+        if session['questions_answered'] >= 5:
+            session['remaining_actions'] = session['correct_answers']
+            session['questions_answered'] = 0
+            session['correct_answers'] = 0
+
+    # Debug output to trace issue
+    print(f"Current Term Index: {current_term_index}")
+    print(f"Current Term: {current_term}")
+
+    # Fetch the current term for rendering
+    current_term = terms[session['current_term_index']] if terms else None
+
+    return render_template('gameView.html',
+                           monster=monster,
+                           monster_sprite = sprite_filename,
+                           user=session['user'],
+                           combat_log=combat_log,
+                           current_term=current_term,
+                           feedback_message=feedback_message,
+                           feedback_class=feedback_class,
+                           correct_answers=session['correct_answers'],
+                           remaining_actions=session['remaining_actions'])
 
 
-@app.route('/confirm_delete/<int:id>', methods=['GET'])
-def confirm_delete(id):
+
+
+@app.route('/attack')
+def attack():
+    if 'user' not in session or 'monsters' not in session or 'current_monster' not in session:
+        return redirect(url_for('gameView'))
+
+    if session['remaining_actions'] <= 0:
+        return redirect(url_for('gameView'))
+
+    user_data = session['user']
+    monsters = session['monsters']
+    current_monster_index = session['current_monster']
+    monster_data = monsters[current_monster_index]
+
+    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    monster = entity.mob(monster_data['name'], monster_data['hp'], monster_data['damage'], monster_data['hit_rate'])
+
+    damage_dealt = user.deal_damage()
+    result = monster.take_damage(damage_dealt)
+    session['remaining_actions'] -= 1
+
+    combat_log = session.get('combat_log', [])
+    combat_log.append(f"{user.name} attacked! {result}")
+
+    if session['remaining_actions'] == 0:
+        # Monster attacks automatically
+        damage_from_monster = monster.deal_damage()
+        reduced_damage = int(damage_from_monster * (1 - (user.defense_stack / 100)))
+        result = user.take_damage(reduced_damage)
+        combat_log.append(f"{monster.name} attacks! {result}")
+        user.defense_stack = 0
+
+    session['user'] = user.__dict__
+    monsters[current_monster_index] = monster.__dict__
+    session['monsters'] = monsters
+    session['combat_log'] = combat_log
+
+    if monster.hp <= 0:
+        combat_log.append(f"{monster.name} has been defeated!")
+        session['current_monster'] += 1
+
+        if session['current_monster'] >= len(monsters):
+            return redirect(url_for('game_end'))
+
+        session['remaining_actions'] = 5  # Reset actions for the next monster
+
+    return redirect(url_for('gameView'))
+
+@app.route('/defend')
+def defend():
+    if 'user' not in session or 'monsters' not in session or 'current_monster' not in session:
+        return redirect(url_for('gameView'))
+
+    if session['remaining_actions'] <= 0:
+        return redirect(url_for('gameView'))
+
+    user_data = session['user']
+    monsters = session['monsters']
+    current_monster_index = session['current_monster']
+    monster_data = monsters[current_monster_index]
+
+    user = entity.mob(user_data['name'], user_data['hp'], user_data['damage'], user_data['hit_rate'])
+    monster = entity.mob(monster_data['name'], monster_data['hp'], monster_data['damage'], monster_data['hit_rate'])
+
+    user.stack_defense()
+    session['remaining_actions'] -= 1
+
+    combat_log = session.get('combat_log', [])
+    combat_log.append(f"{user.name} used defend. {user.defense_stack} defense stacked!")
+
+    if session['remaining_actions'] == 0:
+        # Monster attacks automatically
+        damage_from_monster = monster.deal_damage()
+        reduced_damage = int(damage_from_monster * (1 - (user.defense_stack / 100)))
+        result = user.take_damage(reduced_damage)
+        combat_log.append(f"{monster.name} attacks! {result}")
+        user.defense_stack = 0
+
+    session['user'] = user.__dict__
+    monsters[current_monster_index] = monster.__dict__
+    session['monsters'] = monsters
+    session['combat_log'] = combat_log
+
+    if user.hp <= 0:
+        combat_log.append("You have been defeated!")
+        session.clear()
+
+    return redirect(url_for('gameView'))
+
+
+def get_terms(tag):
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM Terms WHERE id = ?", (id,))
-    card = cursor.fetchone()
+
+    query = '''
+    SELECT * FROM Terms WHERE tag = ? ORDER BY RANDOM() LIMIT 5;
+    '''
+    cursor.execute(query, (tag,))
+
+    terms = cursor.fetchall()
+
+    terms_dict = [dict(term) for term in terms]
+
     db.close()
-    return render_template('delete.html', card=card)
 
-@app.route('/delete_card/<int:id>', methods=['POST'])
-def delete_card(id):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM Terms WHERE id = ?", (id,))
-    db.commit()
-    db.close()
-    return redirect(url_for('index'))
+    return terms_dict
 
-@app.route('/gameView/')
-def gameView():
-    return render_template('gameView.html')
-
-
-@app.route('/cancel')
-def cancel():
-    return redirect(url_for('index'))
+@app.route('/game_end')
+def game_end():
+    return render_template('gameEnd.html')
 
 if __name__ == '__main__':
-    with app.app_context():
-        create_table()
+    create_table()
     app.run(debug=True)
