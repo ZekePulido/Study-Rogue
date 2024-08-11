@@ -6,13 +6,14 @@ class mob:
         self.hp = hp
         self.damage = damage
         self.hit_rate = hit_rate
+        self.defense_stack = 0  # New attribute for stacking defense
 
     def take_damage(self, amount):
         self.hp -= amount
         if self.hp < 0:
             self.hp = 0
         result = f"{self.name} took {amount} damage. Remaining HP: {self.hp}"
-        print(result)  # Ensure the damage and HP are printed accurately
+        print(result)
         return result
 
     def deal_damage(self):
@@ -26,7 +27,7 @@ class mob:
             return 0
 
     def defend_damage(self, amount):
-        blocked = max(amount - self.damage, 0)  # Ensure no negative blocking
+        blocked = max(amount - self.defense_stack, 0)
         self.hp -= blocked
         if self.hp < 0:
             self.hp = 0
@@ -34,4 +35,13 @@ class mob:
         print(result)
         return result
 
+    def attack(self, target):
+        damage = self.deal_damage()
+        return target.take_damage(damage)
+
+    def stack_defense(self):
+        self.defense_stack += 10  # Increase defense stack by a fixed amount
+        result = f"{self.name} increased defense! Current Defense: {self.defense_stack}"
+        print(result)
+        return result
 

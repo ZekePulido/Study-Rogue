@@ -128,4 +128,27 @@ body {
     background-color: lightskyblue;
 }
 
+.feedback {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+}
+.correct {
+    color: green;
+}
+.incorrect {
+    color: red;
+}
+
+.orb-container {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+.orb {
+    width: 50px;
+    height: 50px;
+    background-image: url('/static/orb.gif');
+    background-size: cover;
+}
 

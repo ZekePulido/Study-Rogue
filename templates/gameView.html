@@ -5,18 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Rogue</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gameView.css') }}">
+    <style>
+        .results {
+            max-height: 200px;
+            height: 100px;
+            overflow-y: auto;
+            background-color: rgba(233, 236, 239, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-<style>
-    .results {
-        max-height: 200px; 
-        height: 100px; 
-        overflow-y: auto;
-        background-color: rgba(233, 236, 239, 0.8);
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        box-sizing: border-box; 
-    }
-</style>
 <body>
     <div class="container title-container">
         <img src="{{ url_for('static', filename='title-image.jpg') }}" alt="Study Rogue">
@@ -25,14 +27,24 @@
         <div class="left">
             <div class="note-card">
                 <h3>Question</h3>
-                <!-- Display question here -->
-                <p>What is the capital of France?</p>
+                <!-- Display the current question with data attributes -->
+                {% if current_term %}
+                <p id="current-question" data-index="{{ session['current_term_index'] }}" data-id="{{ current_term.id }}">
+                    {{ current_term.question }}
+                {% else %}
+                    <p>No questions available</p>
+                {% endif %}
             </div>
-            <div class="note-card">
-                <h3>Your Answer</h3>
-                <!-- Input for answer here -->
-                <input type="text" placeholder="Type your answer here" style="width: 80%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-            </div>
+            <form method="post" action="{{ url_for('gameView') }}">
+                <div class="note-card">
+                    <h3>Your Answer</h3>
+                    <input type="text" name="user_answer" placeholder="Type your answer here" style="width: 80%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                    <button type="submit">Submit Answer</button>
+                    <div class="feedback {{ feedback_class }}">{{ feedback_message }}</div>
+                    <p>Correct Answers: {{ correct_answers }}</p>
+                    <p>Remaining Actions: {{ remaining_actions }}</p>
+                </div>
+            </form>
         </div>
         <div class="right">
             <div class="character-info">
@@ -42,7 +54,7 @@
                 </div>
                 <div class="monster">
                     <p id="monster-hp">{{ monster.name }} HP: <span>{{ monster.hp }}</span></p>
-                    <img src="{{ url_for('static', filename='assets/goblin.png') }}" alt="monster" class="character-image">
+                    <img src="{{ url_for('static', filename='assets/' + monster_sprite) }}" alt="monster" class="character-image">
                 </div>
             </div>
             <div class="buttons">
@@ -53,29 +65,40 @@
                     <button type="submit" class="defend" id="defend-button">Defend</button>
                 </form>
             </div>
-
             <div class="results">
                 {% for entry in combat_log %}
                     <p>{{ entry|safe }}</p>
                 {% endfor %}
-            </div>           
+            </div>
         </div>
     </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Get the HP values
-            const userHp = parseInt(document.getElementById('user-hp').querySelector('span').textContent);
-            const monsterHp = parseInt(document.getElementById('monster-hp').querySelector('span').textContent);
-
-            // Get the buttons
+            const remainingActions = {{ remaining_actions }};
             const attackButton = document.getElementById('attack-button');
             const defendButton = document.getElementById('defend-button');
+            const answerInput = document.querySelector('input[name="user_answer"]');
+            const submitButton = document.querySelector('button[type="submit"]');
+            const currentQuestionElement = document.getElementById('current-question');
+            const currentIndex = currentQuestionElement.getAttribute('data-index');
+            const currentTermId = currentQuestionElement.getAttribute('data-id');
+            
+            // Validate current question index
+            if (currentIndex !== "{{ session['current_term_index'] }}") {
+                console.error("Question index mismatch.");
+                // Optionally, redirect or show an error
+            }
 
-            // Check if either HP is 0 or below and disable buttons
-            if (userHp <= 0 || monsterHp <= 0) {
+            if (remainingActions > 0) {
+                attackButton.disabled = false;
+                defendButton.disabled = false;
+                answerInput.disabled = true;
+                submitButton.disabled = true;
+            } else {
                 attackButton.disabled = true;
                 defendButton.disabled = true;
+                answerInput.disabled = false;
+                submitButton.disabled = false;
             }
         });
     </script>
